@@ -1,7 +1,7 @@
 import express from "express";
 import { Request, Response } from "express";
 import cors from "cors";
-import {consumeQueue} from "./utils/message.util";
+import registered_events from "./events/events";
 
 const app = express();
 const PORT: string | number = process.env.PORT || 3001;
@@ -26,12 +26,7 @@ app.get("/health", (req: Request, res: Response) => {
 /**
  * Start listening for messages from RabbitMQ
  */
-consumeQueue("main_exchange", "product-service-queue", "user.created", (data) => {
-    console.log("📦 Product Service received user.created event:", data);
-
-    // Simulate some action upon receiving the event
-    // e.g., create user-specific product bucket, log activity, etc.
-});
+registered_events();
 
 app.listen(PORT, () => {
     console.log(`✅ Product Service is running on: http://localhost:${PORT}`);

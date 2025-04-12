@@ -12,6 +12,8 @@ services:
       product-service:
         condition: service_started
     restart: unless-stopped
+    volumes:
+      - ./gateway:/app
 
   user-service:
     build:
