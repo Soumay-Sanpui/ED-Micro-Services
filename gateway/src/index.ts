@@ -4,7 +4,7 @@ import proxy from "express-http-proxy";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use("/user", proxy("http://user-service:3000"));
+app.use("/user", proxy("http://nginx"));
 app.use("/product", proxy("http://product-service:3001"));
 
 app.get("/",(req: Request, res: Response) => {
