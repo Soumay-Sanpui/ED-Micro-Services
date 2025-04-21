@@ -1,25 +1,15 @@
 services:
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    container_name: gateway
+  consul:
+    image: consul:1.15.4
+    container_name: consul
     ports:
-      - "5000:5000"
-    depends_on:
-      user-service:
-        condition: service_started
-      product-service:
-        condition: service_started
-    restart: unless-stopped
-    volumes:
-      - ./gateway:/app
+      - "8500:8500"
+    command: agent -dev -client=0.0.0.0
 
-  user-service:
+  user:
     build:
       context: ./user-service
       dockerfile: Dockerfile
-    container_name: user-service
     expose:
       - "3000"
     depends_on:
@@ -31,45 +21,12 @@ services:
     volumes:
       - ./user-service:/app
 
-  user-service-2:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
-    container_name: user-service-2
-    expose:
-      - "3000"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    restart: unless-stopped
-    volumes:
-      - ./user-service:/app
-
-  user-service-3:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
-    container_name: user-service-3
-    expose:
-        - "3000"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    restart: unless-stopped
-    volumes:
-        - ./user-service:/app
-
-  product-service:
+  product:
     build:
       context: ./product-service
       dockerfile: Dockerfile
-    container_name: product-service
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -99,13 +56,28 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:latest
+    build: ./nginx
     container_name: nginx
+    volumes:
+      -  nginx-conf:/etc/nginx/
     ports:
       - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      gateway:
-        condition: service_started
     restart: unless-stopped
+
+  consul-template:
+      build:
+        context: .
+        dockerfile: consul-template.Dockerfile
+      container_name: consul-template
+      volumes:
+        - ./nginx.ctmpl:/etc/consul-template/templates/nginx.ctmpl
+        - nginx-conf:/etc/nginx/
+      depends_on:
+        - consul
+      command: >
+        -template "/etc/consul-template/templates/nginx.ctmpl:/etc/nginx/nginx.conf"
+        -consul-addr="http://consul:8500"
+
+volumes:
+  # shared volume for consul-template and nginx
+  nginx-conf:

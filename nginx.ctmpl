@@ -1,0 +1,25 @@
+events {}
+
+http {
+  {{ range services }}
+  {{ if service .Name }}
+  upstream {{ .Name }} {
+    {{ range service .Name }}
+    server {{ .Address }}:{{ .Port }};
+    {{ end }}
+  }
+  {{ end }}
+  {{ end }}
+
+  server {
+    listen 80;
+
+    {{ range services }}
+    {{ if service .Name }}
+    location /{{ .Name }}/ {
+      proxy_pass http://{{ .Name }}/;
+    }
+    {{ end }}
+    {{ end }}
+  }
+}
