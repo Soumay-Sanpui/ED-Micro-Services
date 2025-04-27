@@ -4,6 +4,7 @@ import cors from "cors";
 import registered_events from "./events/events";
 import consul from "consul";
 import os from "os";
+import {requestLogger} from "./middlewares/requestLogger";
 
 const app = express();
 const PORT: string | number = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ const consulClient = new consul({
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use(requestLogger);
 
 /**
  * Root endpoint - optional
@@ -55,7 +57,7 @@ app.listen(PORT, () => {
         console.error('Error registering with Consul:', err);
         throw err;
     });
-    
+
     // Handle graceful shutdown and de-register from Consul
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
@@ -72,7 +74,7 @@ function gracefulShutdown() {
             console.error('Error de-registering from Consul:', err);
             process.exit(1);
         });
-    
+
     // Shutdown after timeout even if Consul doesn't respond
     setTimeout(() => {
         console.log('Forced shutdown after timeout');
